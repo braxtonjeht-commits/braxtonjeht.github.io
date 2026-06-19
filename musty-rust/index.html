@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musty Rust — Run your Rust server from Discord</title>
+<meta name="description" content="Control your Rust server from Discord — status, players, whitelist, bounties, restarts and wipes, even when your host blocks external RCON.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --ink:#0d1117;--panel:#151b24;--panel2:#1a212c;--panel3:#222b39;
+ --line:#27313f;--line2:#33404f;--text:#dce3ed;--muted:#8c97a6;--faint:#5e6878;
+ --disp:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+ --acc:#e8743b;--acc2:#f0a64e;--glow:rgba(232,116,59,.10);--sel:rgba(232,116,59,.28);
+ --chipbg:rgba(232,116,59,.10);--chipbd:rgba(232,116,59,.25);--ctaA:rgba(232,116,59,.10);--ctaB:rgba(240,166,78,.07);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+ background-image:radial-gradient(900px 520px at 82% -10%, var(--glow), transparent 60%),radial-gradient(700px 480px at -5% 4%, rgba(255,255,255,.03), transparent 55%);background-attachment:fixed}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--sel)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 clamp(18px,4vw,34px)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--acc)}
+
+header{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);background:rgba(13,17,23,.72);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:14px;padding:13px 0}
+.back{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14.5px;color:var(--muted);transition:.15s}
+.back:hover{color:var(--text)}
+.back .mk{width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#06121f;font-family:var(--disp);font-weight:700;font-size:14px}
+.nav .sp{margin-left:auto}
+.btn{font-family:var(--body);font-weight:600;font-size:14px;padding:10px 16px;border-radius:8px;border:1px solid transparent;cursor:pointer;transition:.16s;display:inline-flex;align-items:center;gap:7px}
+.btn.pri{background:var(--acc);color:#06121f}
+.btn.pri:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn.sec{background:var(--panel3);color:var(--text);border-color:var(--line2)}
+.btn.sec:hover{border-color:var(--acc);color:#fff;transform:translateY(-1px)}
+.btn:focus-visible,.back:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+.hero{display:grid;grid-template-columns:1.04fr .96fr;gap:46px;align-items:center;padding:clamp(48px,8vw,92px) 0}
+.hero h1{font-family:var(--disp);font-weight:700;font-size:clamp(34px,6vw,58px);line-height:1.04;letter-spacing:-1.2px;margin:14px 0 16px}
+.hero h1 em{font-style:normal;background:linear-gradient(120deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:18px;color:#c3cdda;max-width:46ch;margin:0 0 26px}
+.hctas{display:flex;gap:11px;flex-wrap:wrap}
+
+/* faux discord card */
+.fcard{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:10px;padding:18px 18px 16px;box-shadow:0 30px 60px -28px rgba(0,0,0,.7)}
+.fc-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.fc-av{width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,var(--acc),var(--acc2));flex:none;display:grid;place-items:center;color:#06121f;font-family:var(--disp);font-weight:700;font-size:14px}
+.fc-top b{font-family:var(--disp);font-weight:600;font-size:14px}
+.fc-bot{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.6px;color:#06121f;background:var(--acc);padding:2px 6px;border-radius:4px;text-transform:uppercase}
+.fc-top time{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.fc-title{font-family:var(--disp);font-weight:600;font-size:16px;margin:0 0 3px}
+.fc-sub{font-size:13px;color:var(--muted);margin:0 0 14px}
+.bar{height:7px;border-radius:4px;background:var(--panel3);overflow:hidden;margin:4px 0 6px}
+.bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.bar-t{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.ctrls{display:flex;gap:8px;margin-top:14px}
+.ctrls span{width:34px;height:34px;border-radius:8px;background:var(--panel3);border:1px solid var(--line);display:grid;place-items:center}
+.ctrls span svg{width:15px;height:15px;fill:var(--text)}
+.ctrls span.main{background:var(--acc);border-color:var(--acc)}
+.ctrls span.main svg{fill:#06121f}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:6px}
+.sgrid div{border-left:2px solid var(--line2);padding-left:10px}
+.sgrid .k{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.6px}
+.sgrid .v{font-family:var(--disp);font-weight:600;font-size:16px}
+.sgrid .v.ok{color:var(--acc)}
+.tree{font-family:var(--mono);font-size:12.5px;line-height:1.9;color:var(--muted);margin-top:4px}
+.tree .cat{color:var(--text);font-weight:600}
+.tree .ch{padding-left:16px;color:var(--muted)}
+.tree .ch b{color:var(--acc);font-weight:400}
+.fc-foot{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:14px;border-top:1px solid var(--line);padding-top:11px}
+
+.sec{padding:clamp(40px,7vw,72px) 0;border-top:1px solid var(--line)}
+.sec h2{font-family:var(--disp);font-weight:700;font-size:clamp(24px,4vw,34px);letter-spacing:-.6px;margin:8px 0 0}
+.sec .intro{color:var(--muted);max-width:54ch;margin:10px 0 0}
+
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+.feat{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:20px 19px;transition:.18s}
+.feat:hover{border-color:var(--acc);transform:translateY(-2px)}
+.feat .ic{width:34px;height:34px;border-radius:9px;background:var(--chipbg);border:1px solid var(--chipbd);display:grid;place-items:center;margin-bottom:13px;font-family:var(--disp);font-weight:700;color:var(--acc)}
+.feat h3{font-family:var(--disp);font-weight:600;font-size:16.5px;margin:0 0 6px}
+.feat p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+
+.cmds{margin-top:30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
+.cmd-row{display:flex;gap:16px;align-items:baseline;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+.cmd-row:first-child{border-top:none}
+.cmd-row code{font-family:var(--mono);font-size:13.5px;color:var(--acc);font-weight:500;flex:none;min-width:200px}
+.cmd-row span{font-size:14px;color:var(--muted)}
+
+.cta{margin:clamp(40px,7vw,72px) 0;padding:clamp(34px,6vw,56px) clamp(24px,5vw,52px);border:1px solid var(--line);border-radius:18px;
+ background:linear-gradient(140deg,var(--ctaA),var(--ctaB));text-align:center}
+.cta h2{font-family:var(--disp);font-weight:700;font-size:clamp(24px,4vw,36px);letter-spacing:-.6px;margin:0 0 10px}
+.cta p{color:#c3cdda;margin:0 auto 22px;max-width:48ch}
+.cta .hctas{justify-content:center}
+
+footer{border-top:1px solid var(--line);background:var(--panel2)}
+.foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:26px 0 30px;font-size:13.5px}
+.foot .cols{display:flex;gap:36px;flex-wrap:wrap}
+.foot .col b{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--faint);display:block;margin-bottom:9px}
+.foot .col a{display:block;color:var(--muted);padding:3px 0;transition:.14s}
+.foot .col a:hover{color:var(--acc)}
+.foot .copy{color:var(--faint);font-family:var(--mono);font-size:12px}
+
+@media(max-width:860px){.hero{grid-template-columns:1fr;gap:30px}.feats{grid-template-columns:1fr}.cmd-row code{min-width:0;width:100%}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+
+</style>
+</head>
+<body>
+<header><div class="wrap"><nav class="nav">
+  <a class="back" href="../"><span class="mk">IA</span> All bots</a>
+  <span class="sp"></span>
+  <a class="btn pri" href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Hire on Fiverr →</a>
+</nav></div></header>
+
+<section class="wrap hero">
+  <div>
+    <div class="eyebrow">rust server management</div>
+    <h1>Run your Rust server <em>without leaving Discord.</em></h1>
+    <p class="lead">Status, players, whitelist, restarts, wipes, and a built-in bounty system — all from slash commands. And it works even when your host locks RCON down.</p>
+    <div class="hctas">
+      <a class="btn pri" href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Get it on Fiverr →</a>
+      <a class="btn sec" href="#commands">See commands</a>
+    </div>
+  </div>
+  <div class="fcard"><div class="fc-top"><span class="fc-av">R</span><b>Musty Rust</b><span class="fc-bot">bot</span><time>now</time></div>
+   <div class="fc-title">Server status</div><div class="fc-sub">/status · live</div>
+   <div class="sgrid">
+     <div><div class="k">State</div><div class="v ok">● Online</div></div>
+     <div><div class="k">Players</div><div class="v">38 / 100</div></div>
+     <div><div class="k">Uptime</div><div class="v">4d 12h</div></div>
+     <div><div class="k">Next wipe</div><div class="v">Thu</div></div>
+   </div>
+   <div class="fc-foot">queue: 0 pending · last cmd /whitelist add ✓</div></div>
+</section>
+
+<section class="sec"><div class="wrap">
+  <div class="eyebrow">features</div>
+  <h2>Admin tools that respect your time</h2>
+  <p class="intro">Stop alt-tabbing into a console. Everything an admin needs is one slash command away, gated to your staff.</p>
+  <div class="feats"><div class="feat"><div class="ic">1</div><h3>Run it from Discord</h3><p>Status, players, restarts and wipes — control the whole server without opening a console.</p></div>
+<div class="feat"><div class="ic">2</div><h3>Works when RCON is blocked</h3><p>A Supabase command queue pushes commands through even on hosts that lock external RCON down.</p></div>
+<div class="feat"><div class="ic">3</div><h3>Whitelist control</h3><p>Add or remove players with one command — no file edits, no restarts.</p></div>
+<div class="feat"><div class="ic">4</div><h3>Bounty system</h3><p>An Oxide plugin that puts a price on heads and pays out automatically.</p></div>
+<div class="feat"><div class="ic">5</div><h3>Live player tracking</h3><p>See who's online, playtime, and join/leave logs piped straight to Discord.</p></div>
+<div class="feat"><div class="ic">6</div><h3>Role-gated commands</h3><p>Only your staff can pull the trigger — permissions enforced per command.</p></div></div>
+</div></section>
+
+<section class="sec" id="commands"><div class="wrap">
+  <div class="eyebrow">commands</div>
+  <h2>Everything from a slash command</h2>
+  <p class="intro">Admin commands are locked to your staff roles. Players only see what you let them.</p>
+  <div class="cmds"><div class="cmd-row"><code>/status</code><span>Live server state, players, uptime</span></div>
+<div class="cmd-row"><code>/players</code><span>List who's online right now</span></div>
+<div class="cmd-row"><code>/whitelist add &lt;id&gt;</code><span>Whitelist a player instantly</span></div>
+<div class="cmd-row"><code>/bounty set &lt;player&gt; &lt;amount&gt;</code><span>Put a price on a head</span></div>
+<div class="cmd-row"><code>/restart</code><span>Schedule a clean restart</span></div>
+<div class="cmd-row"><code>/wipe</code><span>Trigger a map or full wipe</span></div>
+<div class="cmd-row"><code>/say &lt;message&gt;</code><span>Broadcast to the server</span></div>
+<div class="cmd-row"><code>/kick &lt;player&gt;</code><span>Remove a player</span></div></div>
+</div></section>
+
+<div class="wrap"><div class="cta">
+  <h2>Running a Rust server?</h2>
+  <p>I'll set up the bot, the plugins, and the queue architecture for your host — even the ones that block RCON. Or tailor it to your community.</p>
+  <div class="hctas">
+    <a class="btn pri" href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Hire on Fiverr →</a>
+    <a class="btn sec" href="../">Back to all bots</a>
+  </div>
+</div></div>
+
+<footer><div class="wrap foot">
+  <div class="cols">
+    <div class="col"><b>Other bots</b><a href="../music-bot/">Discord Music Bot</a>
+<a href="../forge/">Forge</a></div>
+    <div class="col"><b>Studio</b><a href="../">Portfolio</a><a href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Hire on Fiverr</a></div>
+  </div>
+  <span class="copy">© 2026 Immoral Acquisitions LLC · Temple, TX</span>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Immoral Acquisitions — Discord Bot &amp; Automation Developer</title>
+<meta name="description" content="Custom Discord bots, automation, and game-server tooling built on Node.js and a real database. Hire Cory Raymer / Immoral Acquisitions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1117; --panel:#151b24; --panel2:#1a212c; --panel3:#222b39;
+    --line:#27313f; --line2:#33404f;
+    --text:#dce3ed; --muted:#8c97a6; --faint:#5e6878;
+    --azure:#3b9eff; --mint:#46e0a8; --violet:#a382ff; --amber:#ffb454;
+    --r:10px;
+    --disp:"Space Grotesk",system-ui,sans-serif;
+    --body:"Inter",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:var(--body); font-size:16px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(900px 500px at 78% -12%, rgba(59,158,255,.10), transparent 60%),
+                     radial-gradient(700px 500px at 0% 8%, rgba(163,130,255,.07), transparent 55%);
+    background-attachment:fixed;
+  }
+  a{color:inherit;text-decoration:none}
+  ::selection{background:rgba(59,158,255,.28)}
+
+  /* ---- window shell ---- */
+  .window{
+    max-width:1080px; margin:clamp(14px,4vw,46px) auto;
+    border:1px solid var(--line); border-radius:18px; overflow:hidden;
+    background:var(--panel);
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.7), 0 2px 0 rgba(255,255,255,.02) inset;
+  }
+  .wbar{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 18px; background:var(--panel2); border-bottom:1px solid var(--line);
+  }
+  .dot3{display:flex;gap:7px;margin-right:4px}
+  .dot3 i{width:11px;height:11px;border-radius:50%;display:block;opacity:.8}
+  .dot3 i:nth-child(1){background:#ff5f57}.dot3 i:nth-child(2){background:#febc2e}.dot3 i:nth-child(3){background:#28c840}
+  .wbar .chan{font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .wbar .chan b{color:var(--text);font-weight:600}
+  .status{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .live{width:9px;height:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 0 rgba(70,224,168,.6);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(70,224,168,.5)}70%{box-shadow:0 0 0 7px rgba(70,224,168,0)}100%{box-shadow:0 0 0 0 rgba(70,224,168,0)}}
+
+  .wbody{display:grid;grid-template-columns:214px 1fr}
+
+  /* ---- rail ---- */
+  .rail{background:var(--ink);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:6px}
+  .server{display:flex;align-items:center;gap:11px;padding:6px 6px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .server .badge{width:42px;height:42px;border-radius:13px;background:linear-gradient(150deg,#10202b,#0c161d);border:1px solid var(--line2);display:grid;place-items:center;flex:none}
+  .server .badge svg{width:26px;height:26px}
+  .server .meta b{font-family:var(--disp);font-weight:700;font-size:14.5px;letter-spacing:.2px;display:block;line-height:1.2}
+  .server .meta span{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:1.2px}
+  .rail .lbl{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:1.4px;padding:8px 8px 4px}
+  .nav a{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:7px;color:var(--muted);font-size:14.5px;font-weight:500;transition:.16s}
+  .nav a .h{color:var(--faint);font-weight:600}
+  .nav a:hover{background:var(--panel2);color:var(--text)}
+  .nav a:hover .h{color:var(--azure)}
+  .nav a:focus-visible{outline:2px solid var(--azure);outline-offset:2px}
+  .railfoot{margin-top:auto;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);display:flex;gap:9px;align-items:center}
+  .railfoot .live{flex:none}
+  .railfoot div{font-size:12px;line-height:1.35}
+  .railfoot b{display:block;font-weight:600}
+  .railfoot span{color:var(--muted);font-family:var(--mono);font-size:11px}
+
+  /* ---- transcript ---- */
+  .feed{padding:8px clamp(16px,3vw,34px) 30px;min-width:0}
+  .mnav{display:none;gap:8px;flex-wrap:wrap;padding:14px 0 4px}
+  .mnav a{font-family:var(--mono);font-size:12.5px;color:var(--muted);border:1px solid var(--line);padding:6px 11px;border-radius:20px}
+  .mnav a:active{color:var(--text)}
+
+  .msg{display:flex;gap:15px;padding:20px 0}
+  .msg + .msg{border-top:1px solid rgba(39,49,63,.5)}
+  .ava{width:42px;height:42px;border-radius:13px;flex:none;background:linear-gradient(150deg,#11212c,#0c161d);border:1px solid var(--line2);display:grid;place-items:center}
+  .ava svg{width:26px;height:26px}
+  .mmain{flex:1;min-width:0}
+  .mhead{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap}
+  .mhead b{font-family:var(--disp);font-weight:600;font-size:15.5px}
+  .bot{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.6px;color:#cfe6ff;background:var(--azure);padding:2px 6px;border-radius:4px;text-transform:uppercase}
+  .mhead time{font-size:12px;color:var(--faint);font-family:var(--mono)}
+  .cmd{font-family:var(--mono);font-size:14px;color:var(--muted);margin-bottom:12px}
+  .cmd s{color:var(--azure);text-decoration:none;font-weight:500}
+  .cmd .cur{display:inline-block;width:8px;height:16px;background:var(--azure);vertical-align:-3px;margin-left:1px;animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---- embeds ---- */
+  .embed{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--azure);border-radius:8px;padding:20px 22px;max-width:740px;
+    opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
+  .embed.in{opacity:1;transform:none}
+  .embed.violet{border-left-color:var(--violet)}
+  .embed.mint{border-left-color:var(--mint)}
+  .embed.amber{border-left-color:var(--amber)}
+  .eauthor{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+  .eauthor i{width:6px;height:6px;border-radius:50%;background:var(--azure);display:inline-block}
+  .etitle{font-family:var(--disp);font-weight:700;line-height:1.12;letter-spacing:-.4px;margin:0 0 12px;
+    font-size:clamp(26px,4.4vw,40px)}
+  .etitle.sm{font-size:clamp(20px,3vw,26px)}
+  .edesc{color:#c2ccd9;margin:0 0 18px;max-width:60ch}
+  .edesc.tight{margin-bottom:14px}
+  .efoot{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:16px;border-top:1px solid var(--line);padding-top:12px;letter-spacing:.2px}
+
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{font-family:var(--body);font-weight:600;font-size:14px;padding:11px 17px;border-radius:8px;border:1px solid transparent;cursor:pointer;transition:.16s;display:inline-flex;align-items:center;gap:7px}
+  .btn.pri{background:var(--azure);color:#06121f}
+  .btn.pri:hover{background:#5cafff;transform:translateY(-1px)}
+  .btn.sec{background:var(--panel3);color:var(--text);border-color:var(--line2)}
+  .btn.sec:hover{border-color:var(--azure);color:#fff;transform:translateY(-1px)}
+  .btn:focus-visible{outline:2px solid var(--azure);outline-offset:2px}
+
+  /* fields grid (services) */
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:16px 26px}
+  .field h4{font-family:var(--mono);font-size:13.5px;font-weight:600;color:var(--text);margin:0 0 5px;display:flex;align-items:center;gap:7px}
+  .field h4 b{color:var(--violet);font-weight:600}
+  .field p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+
+  /* project cards (work) */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .card{display:block;background:var(--panel3);border:1px solid var(--line);border-radius:9px;padding:16px 17px;transition:.18s}
+  .card:hover{border-color:var(--mint);transform:translateY(-2px);box-shadow:0 14px 30px -16px rgba(0,0,0,.6)}
+  .card:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+  .card .ct{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+  .card .ct b{font-family:var(--disp);font-weight:600;font-size:16px}
+  .card .ct .go{font-family:var(--mono);font-size:12px;color:var(--mint)}
+  .card p{margin:0 0 12px;font-size:13.5px;color:var(--muted);line-height:1.5}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:10.5px;color:#a9d8c6;background:rgba(70,224,168,.09);border:1px solid rgba(70,224,168,.22);padding:2px 8px;border-radius:20px}
+  .card.cta{background:linear-gradient(150deg,rgba(59,158,255,.10),rgba(163,130,255,.08));border-style:dashed;border-color:var(--line2);display:flex;flex-direction:column;justify-content:center}
+  .card.cta b{font-family:var(--disp);font-size:16px;display:block;margin-bottom:4px}
+  .card.cta span{font-size:13px;color:var(--muted)}
+  .card.cta:hover{border-color:var(--azure)}
+
+  footer{padding:22px clamp(16px,3vw,34px) 28px;border-top:1px solid var(--line);background:var(--panel2);
+    display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:12px;color:var(--faint)}
+  footer a:hover{color:var(--azure)}
+
+  @media (max-width:820px){
+    .wbody{grid-template-columns:1fr}
+    .rail{display:none}
+    .mnav{display:flex}
+    .embed{max-width:none}
+    .fields,.cards{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .embed{opacity:1;transform:none;transition:none}
+    .live,.cmd .cur{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- reusable bot mark -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="bot" viewBox="0 0 48 48">
+    <line x1="24" y1="13" x2="24" y2="8" stroke="#46e0a8" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="24" cy="6.4" r="2.4" fill="#46e0a8"/>
+    <rect x="11" y="13" width="26" height="22" rx="6" fill="#0c161d" stroke="#46e0a8" stroke-width="2.4"/>
+    <rect x="7.5" y="20" width="3.5" height="9" rx="1.75" fill="#46e0a8"/>
+    <rect x="37" y="20" width="3.5" height="9" rx="1.75" fill="#46e0a8"/>
+    <rect x="15" y="17.5" width="18" height="9.5" rx="4.5" fill="#06100b"/>
+    <circle cx="20" cy="22.2" r="2.5" fill="#9ff0cf"/>
+    <circle cx="28" cy="22.2" r="2.5" fill="#9ff0cf"/>
+    <rect x="18" y="30" width="12" height="2.6" rx="1.3" fill="#46e0a8" opacity=".8"/>
+  </symbol>
+</svg>
+
+<main class="window">
+  <div class="wbar">
+    <span class="dot3"><i></i><i></i><i></i></span>
+    <span class="chan"><b>#</b> hire-a-bot-dev</span>
+    <span class="status"><span class="live"></span>online · 99.9% uptime</span>
+  </div>
+
+  <div class="wbody">
+    <!-- left rail -->
+    <aside class="rail">
+      <div class="server">
+        <span class="badge"><svg><use href="#bot"/></svg></span>
+        <span class="meta"><b>Immoral Acq.</b><span>bot studio</span></span>
+      </div>
+      <span class="lbl">channels</span>
+      <nav class="nav">
+        <a href="#hire"><span class="h">#</span> hire</a>
+        <a href="#services"><span class="h">#</span> services</a>
+        <a href="#work"><span class="h">#</span> work</a>
+        <a href="#contact"><span class="h">#</span> contact</a>
+      </nav>
+      <div class="railfoot">
+        <span class="live"></span>
+        <div><b>Available</b><span>taking new builds</span></div>
+      </div>
+    </aside>
+
+    <!-- transcript -->
+    <section class="feed">
+      <nav class="mnav">
+        <a href="#hire">/hire</a><a href="#services">/services</a><a href="#work">/work</a><a href="#contact">/contact</a>
+      </nav>
+
+      <!-- HERO -->
+      <article class="msg" id="hire">
+        <span class="ava"><svg><use href="#bot"/></svg></span>
+        <div class="mmain">
+          <div class="mhead"><b>Immoral Acquisitions</b><span class="bot">bot</span><time>now</time></div>
+          <div class="cmd" id="typed"><s></s><span class="cur"></span></div>
+          <div class="embed" data-reveal>
+            <div class="eauthor"><i></i> cory raymer · developer</div>
+            <h1 class="etitle">I build Discord bots that don't break.</h1>
+            <p class="edesc">Custom bots, automation, and game-server tooling — built on Node.js with a real database underneath, set up to run in production instead of dying the first time real users show up.</p>
+            <div class="btns">
+              <!-- TODO: replace with your Fiverr profile URL -->
+              <a class="btn pri" href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Hire on Fiverr →</a>
+              <a class="btn sec" href="#work">See the bots</a>
+            </div>
+            <div class="efoot">Node.js · discord.js v14 · Supabase / PostgreSQL · OCR · Railway</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- SERVICES -->
+      <article class="msg" id="services">
+        <span class="ava"><svg><use href="#bot"/></svg></span>
+        <div class="mmain">
+          <div class="mhead"><b>Immoral Acquisitions</b><span class="bot">bot</span><time>now</time></div>
+          <div class="cmd"><s>/services</s></div>
+          <div class="embed violet" data-reveal>
+            <h2 class="etitle sm">What I build</h2>
+            <div class="fields">
+              <div class="field"><h4><b>›</b> Custom Discord bots</h4><p>Moderation, economies, leaderboards, API integrations — slash commands, buttons, and menus, all backed by a proper database.</p></div>
+              <div class="field"><h4><b>›</b> Bot fixes &amp; upgrades</h4><p>Crashing, broken, or missing a feature? Send the code or repo and I'll get it running, then build on it.</p></div>
+              <div class="field"><h4><b>›</b> Game-server bots</h4><p>Rust, Minecraft, and more. RCON control, whitelists, and custom plugins — even when your host blocks external RCON.</p></div>
+              <div class="field"><h4><b>›</b> Automation &amp; scraping</h4><p>Tired of doing it by hand? I'll wire your tools together and pull the data into wherever you need it.</p></div>
+            </div>
+            <div class="efoot">Most projects ship in 3–10 days · source code included</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- WORK -->
+      <article class="msg" id="work">
+        <span class="ava"><svg><use href="#bot"/></svg></span>
+        <div class="mmain">
+          <div class="mhead"><b>Immoral Acquisitions</b><span class="bot">bot</span><time>now</time></div>
+          <div class="cmd"><s>/work</s></div>
+          <div class="embed mint" data-reveal>
+            <h2 class="etitle sm">The bots</h2>
+            <p class="edesc tight">A few things I've shipped. Each one's live — go poke at it.</p>
+            <div class="cards">
+              <a class="card" href="sc-intel/">
+                <div class="ct"><b>SC Intel Bot</b><span class="go">open ↗</span></div>
+                <p>Star Citizen trade intelligence — live pricing, route planning, OCR-scanned commodity data, and an atomic leaderboard.</p>
+                <div class="chips"><span class="chip">discord.js</span><span class="chip">Supabase</span><span class="chip">OCR</span></div>
+              </a>
+              <a class="card" href="musty-rust/">
+                <div class="ct"><b>Musty Rust</b><span class="go">open ↗</span></div>
+                <p>Full Rust server management — a Discord control panel, Oxide bounty &amp; whitelist plugins, and a Supabase command queue.</p>
+                <div class="chips"><span class="chip">Oxide</span><span class="chip">RCON</span><span class="chip">Supabase</span></div>
+              </a>
+              <a class="card" href="music-bot/">
+                <div class="ct"><b>Discord Music Bot</b><span class="go">open ↗</span></div>
+                <p>YouTube music streaming for Discord — queues, playback controls, and clean low-latency audio.</p>
+                <div class="chips"><span class="chip">yt-dlp</span><span class="chip">ffmpeg</span><span class="chip">Node.js</span></div>
+              </a>
+              <a class="card" href="forge/">
+                <div class="ct"><b>Forge</b><span class="go">open ↗</span></div>
+                <p>One command builds a full Discord server — categories, channels, roles, and permissions from a template in seconds.</p>
+                <div class="chips"><span class="chip">discord.js</span><span class="chip">templates</span><span class="chip">automation</span></div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CONTACT -->
+      <article class="msg" id="contact">
+        <span class="ava"><svg><use href="#bot"/></svg></span>
+        <div class="mmain">
+          <div class="mhead"><b>Immoral Acquisitions</b><span class="bot">bot</span><time>now</time></div>
+          <div class="cmd"><s>/contact</s></div>
+          <div class="embed amber" data-reveal>
+            <h2 class="etitle sm">Let's build something</h2>
+            <p class="edesc">Got a bot idea, a broken bot, or a manual task you want gone? Start a conversation and I'll tell you straight what it'll take.</p>
+            <div class="btns">
+              <!-- TODO: replace all three -->
+              <a class="btn pri" href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Hire on Fiverr →</a>
+              <a class="btn sec" href="mailto:you@example.com">Email</a>
+              <a class="btn sec" href="https://discord.gg/your-invite" target="_blank" rel="noopener">Discord</a>
+            </div>
+            <div class="efoot">Avg. response under a few hours · based in Temple, TX</div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <footer>
+    <span>© 2026 Immoral Acquisitions LLC</span>
+    <span>built &amp; hosted by the bot guy</span>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // reveal embeds on scroll
+  var embeds = document.querySelectorAll('[data-reveal]');
+  if(reduce || !('IntersectionObserver' in window)){
+    embeds.forEach(function(e){e.classList.add('in')});
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} });
+    },{threshold:.18});
+    embeds.forEach(function(e){io.observe(e)});
+  }
+
+  // type the hero command
+  var t = document.querySelector('#typed s');
+  var cur = document.querySelector('#typed .cur');
+  var text = '/hire';
+  if(reduce){ if(t)t.textContent=text; if(cur)cur.style.display='none'; return; }
+  var i=0;
+  function tick(){
+    if(!t) return;
+    t.textContent = text.slice(0,i);
+    i++;
+    if(i<=text.length){ setTimeout(tick, 95); }
+    else { setTimeout(function(){ if(cur) cur.style.display='none'; }, 1200); }
+  }
+  setTimeout(tick, 350);
+})();
+</script>
+</body>
+</html>

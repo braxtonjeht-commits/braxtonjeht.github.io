@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discord Music Bot — High-quality music for Discord</title>
+<meta name="description" content="A 24/7 Discord music bot with clean low-latency audio, smart queues, and instant slash-command controls.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --ink:#0d1117;--panel:#151b24;--panel2:#1a212c;--panel3:#222b39;
+ --line:#27313f;--line2:#33404f;--text:#dce3ed;--muted:#8c97a6;--faint:#5e6878;
+ --disp:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+ --acc:#ff5fa2;--acc2:#b86bff;--glow:rgba(255,95,162,.10);--sel:rgba(255,95,162,.28);
+ --chipbg:rgba(255,95,162,.10);--chipbd:rgba(255,95,162,.25);--ctaA:rgba(255,95,162,.10);--ctaB:rgba(184,107,255,.07);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+ background-image:radial-gradient(900px 520px at 82% -10%, var(--glow), transparent 60%),radial-gradient(700px 480px at -5% 4%, rgba(255,255,255,.03), transparent 55%);background-attachment:fixed}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--sel)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 clamp(18px,4vw,34px)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--acc)}
+
+header{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);background:rgba(13,17,23,.72);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:14px;padding:13px 0}
+.back{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14.5px;color:var(--muted);transition:.15s}
+.back:hover{color:var(--text)}
+.back .mk{width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#06121f;font-family:var(--disp);font-weight:700;font-size:14px}
+.nav .sp{margin-left:auto}
+.btn{font-family:var(--body);font-weight:600;font-size:14px;padding:10px 16px;border-radius:8px;border:1px solid transparent;cursor:pointer;transition:.16s;display:inline-flex;align-items:center;gap:7px}
+.btn.pri{background:var(--acc);color:#06121f}
+.btn.pri:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn.sec{background:var(--panel3);color:var(--text);border-color:var(--line2)}
+.btn.sec:hover{border-color:var(--acc);color:#fff;transform:translateY(-1px)}
+.btn:focus-visible,.back:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+.hero{display:grid;grid-template-columns:1.04fr .96fr;gap:46px;align-items:center;padding:clamp(48px,8vw,92px) 0}
+.hero h1{font-family:var(--disp);font-weight:700;font-size:clamp(34px,6vw,58px);line-height:1.04;letter-spacing:-1.2px;margin:14px 0 16px}
+.hero h1 em{font-style:normal;background:linear-gradient(120deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:18px;color:#c3cdda;max-width:46ch;margin:0 0 26px}
+.hctas{display:flex;gap:11px;flex-wrap:wrap}
+
+/* faux discord card */
+.fcard{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:10px;padding:18px 18px 16px;box-shadow:0 30px 60px -28px rgba(0,0,0,.7)}
+.fc-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.fc-av{width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,var(--acc),var(--acc2));flex:none;display:grid;place-items:center;color:#06121f;font-family:var(--disp);font-weight:700;font-size:14px}
+.fc-top b{font-family:var(--disp);font-weight:600;font-size:14px}
+.fc-bot{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.6px;color:#06121f;background:var(--acc);padding:2px 6px;border-radius:4px;text-transform:uppercase}
+.fc-top time{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.fc-title{font-family:var(--disp);font-weight:600;font-size:16px;margin:0 0 3px}
+.fc-sub{font-size:13px;color:var(--muted);margin:0 0 14px}
+.bar{height:7px;border-radius:4px;background:var(--panel3);overflow:hidden;margin:4px 0 6px}
+.bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.bar-t{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.ctrls{display:flex;gap:8px;margin-top:14px}
+.ctrls span{width:34px;height:34px;border-radius:8px;background:var(--panel3);border:1px solid var(--line);display:grid;place-items:center}
+.ctrls span svg{width:15px;height:15px;fill:var(--text)}
+.ctrls span.main{background:var(--acc);border-color:var(--acc)}
+.ctrls span.main svg{fill:#06121f}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:6px}
+.sgrid div{border-left:2px solid var(--line2);padding-left:10px}
+.sgrid .k{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.6px}
+.sgrid .v{font-family:var(--disp);font-weight:600;font-size:16px}
+.sgrid .v.ok{color:var(--acc)}
+.tree{font-family:var(--mono);font-size:12.5px;line-height:1.9;color:var(--muted);margin-top:4px}
+.tree .cat{color:var(--text);font-weight:600}
+.tree .ch{padding-left:16px;color:var(--muted)}
+.tree .ch b{color:var(--acc);font-weight:400}
+.fc-foot{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:14px;border-top:1px solid var(--line);padding-top:11px}
+
+.sec{padding:clamp(40px,7vw,72px) 0;border-top:1px solid var(--line)}
+.sec h2{font-family:var(--disp);font-weight:700;font-size:clamp(24px,4vw,34px);letter-spacing:-.6px;margin:8px 0 0}
+.sec .intro{color:var(--muted);max-width:54ch;margin:10px 0 0}
+
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+.feat{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:20px 19px;transition:.18s}
+.feat:hover{border-color:var(--acc);transform:translateY(-2px)}
+.feat .ic{width:34px;height:34px;border-radius:9px;background:var(--chipbg);border:1px solid var(--chipbd);display:grid;place-items:center;margin-bottom:13px;font-family:var(--disp);font-weight:700;color:var(--acc)}
+.feat h3{font-family:var(--disp);font-weight:600;font-size:16.5px;margin:0 0 6px}
+.feat p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+
+.cmds{margin-top:30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
+.cmd-row{display:flex;gap:16px;align-items:baseline;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+.cmd-row:first-child{border-top:none}
+.cmd-row code{font-family:var(--mono);font-size:13.5px;color:var(--acc);font-weight:500;flex:none;min-width:200px}
+.cmd-row span{font-size:14px;color:var(--muted)}
+
+.cta{margin:clamp(40px,7vw,72px) 0;padding:clamp(34px,6vw,56px) clamp(24px,5vw,52px);border:1px solid var(--line);border-radius:18px;
+ background:linear-gradient(140deg,var(--ctaA),var(--ctaB));text-align:center}
+.cta h2{font-family:var(--disp);font-weight:700;font-size:clamp(24px,4vw,36px);letter-spacing:-.6px;margin:0 0 10px}
+.cta p{color:#c3cdda;margin:0 auto 22px;max-width:48ch}
+.cta .hctas{justify-content:center}
+
+footer{border-top:1px solid var(--line);background:var(--panel2)}
+.foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:26px 0 30px;font-size:13.5px}
+.foot .cols{display:flex;gap:36px;flex-wrap:wrap}
+.foot .col b{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--faint);display:block;margin-bottom:9px}
+.foot .col a{display:block;color:var(--muted);padding:3px 0;transition:.14s}
+.foot .col a:hover{color:var(--acc)}
+.foot .copy{color:var(--faint);font-family:var(--mono);font-size:12px}
+
+@media(max-width:860px){.hero{grid-template-columns:1fr;gap:30px}.feats{grid-template-columns:1fr}.cmd-row code{min-width:0;width:100%}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+
+</style>
+</head>
+<body>
+<header><div class="wrap"><nav class="nav">
+  <a class="back" href="../"><span class="mk">IA</span> All bots</a>
+  <span class="sp"></span>
+  <a class="btn pri" href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Hire on Fiverr →</a>
+</nav></div></header>
+
+<section class="wrap hero">
+  <div>
+    <div class="eyebrow">discord music bot</div>
+    <h1>Music in your server that <em>actually sounds good.</em></h1>
+    <p class="lead">Crystal-clear playback, a queue that does what you tell it, and controls that respond instantly. Paste a link or type a song — it just plays.</p>
+    <div class="hctas">
+      <a class="btn pri" href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Get it on Fiverr →</a>
+      <a class="btn sec" href="#commands">See commands</a>
+    </div>
+  </div>
+  <div class="fcard"><div class="fc-top"><span class="fc-av">♪</span><b>Music Bot</b><span class="fc-bot">bot</span><time>now</time></div>
+   <div class="fc-title">Now playing</div><div class="fc-sub">requested by @cory</div>
+   <div class="bar"><i style="width:42%"></i></div>
+   <div class="bar-t"><span>1:42</span><span>3:58</span></div>
+   <div class="ctrls"><span><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM20 6v12l-9-6z"/></svg></span><span class="main"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span><span><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM4 6l9 6-9 6z"/></svg></span><span><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/></svg></span></div>
+   <div class="fc-foot">4 tracks up next · volume 80%</div></div>
+</section>
+
+<section class="sec"><div class="wrap">
+  <div class="eyebrow">features</div>
+  <h2>Built to just work</h2>
+  <p class="intro">No premium paywall on basic playback, no laptop-hosting nonsense. One bot, your whole server, running around the clock.</p>
+  <div class="feats"><div class="feat"><div class="ic">1</div><h3>Crystal-clear audio</h3><p>Low-latency streaming through ffmpeg and Opus — no robotic stutter, no drop-outs mid-song.</p></div>
+<div class="feat"><div class="ic">2</div><h3>Smart queue</h3><p>Stack tracks, reorder, shuffle, and loop a single song or the entire queue.</p></div>
+<div class="feat"><div class="ic">3</div><h3>Search or paste</h3><p>Drop a YouTube link or just type a song name and it finds the right track.</p></div>
+<div class="feat"><div class="ic">4</div><h3>Instant controls</h3><p>Play, pause, skip, seek, and volume — from slash commands or buttons.</p></div>
+<div class="feat"><div class="ic">5</div><h3>Always on</h3><p>Runs 24/7 on a real host and reconnects on its own if anything hiccups.</p></div>
+<div class="feat"><div class="ic">6</div><h3>Lightweight</h3><p>One clean bot for your whole server. No bloat, no nag screens.</p></div></div>
+</div></section>
+
+<section class="sec" id="commands"><div class="wrap">
+  <div class="eyebrow">commands</div>
+  <h2>Everything from a slash command</h2>
+  <p class="intro">Type a slash and go. Buttons mirror every command for the people who'd rather click.</p>
+  <div class="cmds"><div class="cmd-row"><code>/play &lt;song or url&gt;</code><span>Queue a track by name or link</span></div>
+<div class="cmd-row"><code>/skip</code><span>Jump to the next track</span></div>
+<div class="cmd-row"><code>/queue</code><span>Show what's coming up</span></div>
+<div class="cmd-row"><code>/pause  ·  /resume</code><span>Pause or resume playback</span></div>
+<div class="cmd-row"><code>/loop</code><span>Loop the song or the whole queue</span></div>
+<div class="cmd-row"><code>/volume &lt;1-100&gt;</code><span>Set playback volume</span></div>
+<div class="cmd-row"><code>/nowplaying</code><span>Show the current track and progress</span></div>
+<div class="cmd-row"><code>/stop</code><span>Clear the queue and leave</span></div></div>
+</div></section>
+
+<div class="wrap"><div class="cta">
+  <h2>Want this in your server?</h2>
+  <p>I'll set it up, host it, and hand it over running. Or build you a custom version with whatever extras you want.</p>
+  <div class="hctas">
+    <a class="btn pri" href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Hire on Fiverr →</a>
+    <a class="btn sec" href="../">Back to all bots</a>
+  </div>
+</div></div>
+
+<footer><div class="wrap foot">
+  <div class="cols">
+    <div class="col"><b>Other bots</b><a href="../musty-rust/">Musty Rust</a>
+<a href="../forge/">Forge</a></div>
+    <div class="col"><b>Studio</b><a href="../">Portfolio</a><a href="https://www.fiverr.com/braxtonjeht" target="_blank" rel="noopener">Hire on Fiverr</a></div>
+  </div>
+  <span class="copy">© 2026 Immoral Acquisitions LLC · Temple, TX</span>
+</div></footer>
+</body>
+</html>
