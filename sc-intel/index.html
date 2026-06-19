@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SC Intel Bot — Live Trade Intel for Star Citizen Orgs</title>
+<meta name="description" content="Crowdsourced trade terminal data for Star Citizen. Scan terminals in-game, unlock live route intel for your whole Discord. UEX + SC Trade Tools + community scans, merged and ranked.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0A0E14;
+  --panel:#0F1622;
+  --panel-2:#121B2A;
+  --line:#1D2940;
+  --amber:#FF6B00;
+  --amber-dim:#8A3D08;
+  --cyan:#33C6FF;
+  --green:#00E589;
+  --ink:#C9D4E3;
+  --dim:#5C6B80;
+  --display:'Chakra Petch',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+  --body:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--void);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;overflow-x:hidden}
+::selection{background:var(--amber);color:var(--void)}
+
+/* subtle starfield + grid atmosphere */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, #ffffff22 0, transparent 100%),
+    radial-gradient(1px 1px at 64% 8%,  #ffffff18 0, transparent 100%),
+    radial-gradient(1px 1px at 83% 41%, #ffffff20 0, transparent 100%),
+    radial-gradient(1px 1px at 31% 67%, #ffffff14 0, transparent 100%),
+    radial-gradient(1px 1px at 91% 79%, #ffffff1c 0, transparent 100%),
+    radial-gradient(1px 1px at 45% 91%, #ffffff12 0, transparent 100%);
+}
+main,header,footer{position:relative;z-index:1}
+
+.wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+
+/* ── Nav ─────────────────────────────────────── */
+nav{position:sticky;top:0;z-index:50;background:rgba(10,14,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:.08em;color:#fff;text-decoration:none;display:flex;align-items:center;gap:10px}
+.logo-mark{width:26px;height:26px;border:2px solid var(--amber);position:relative;flex-shrink:0}
+.logo-mark::after{content:"";position:absolute;inset:5px;background:var(--amber);clip-path:polygon(0 100%,50% 0,100% 100%)}
+.logo span{color:var(--amber)}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{color:var(--dim);text-decoration:none;font-size:.85rem;font-weight:500;letter-spacing:.04em;transition:color .15s}
+.nav-links a:hover,.nav-links a:focus-visible{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-weight:600;font-size:.85rem;letter-spacing:.06em;text-decoration:none;padding:11px 22px;border:1px solid var(--amber);color:var(--amber);background:transparent;transition:background .15s,color .15s;cursor:pointer}
+.btn:hover,.btn:focus-visible{background:var(--amber);color:var(--void)}
+.btn-solid{background:var(--amber);color:var(--void)}
+.btn-solid:hover,.btn-solid:focus-visible{background:#ff8429}
+.btn-cyan{border-color:var(--cyan);color:var(--cyan)}
+.btn-cyan:hover,.btn-cyan:focus-visible{background:var(--cyan);color:var(--void)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+@media(max-width:760px){.nav-links a:not(.btn){display:none}}
+
+/* ── MFD corner-bracket frames ───────────────── */
+.mfd{position:relative;background:var(--panel);border:1px solid var(--line)}
+.mfd::before,.mfd::after,
+.mfd .c::before,.mfd .c::after{
+  content:"";position:absolute;width:14px;height:14px;border-color:var(--amber);border-style:solid;border-width:0}
+.mfd::before{top:-1px;left:-1px;border-top-width:2px;border-left-width:2px}
+.mfd::after{top:-1px;right:-1px;border-top-width:2px;border-right-width:2px}
+.mfd .c::before{bottom:-1px;left:-1px;border-bottom-width:2px;border-left-width:2px}
+.mfd .c::after{bottom:-1px;right:-1px;border-bottom-width:2px;border-right-width:2px}
+.mfd-cyan::before,.mfd-cyan::after,.mfd-cyan .c::before,.mfd-cyan .c::after{border-color:var(--cyan)}
+
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:24px;height:1px;background:var(--amber)}
+
+/* ── Hero ────────────────────────────────────── */
+.hero{padding:80px 0 96px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+@media(max-width:920px){.hero{grid-template-columns:1fr;padding:48px 0 64px}}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(2rem,4.6vw,3.2rem);line-height:1.12;color:#fff;letter-spacing:.01em;margin:20px 0 18px}
+h1 em{font-style:normal;color:var(--amber)}
+.hero p{color:var(--dim);font-size:1.05rem;max-width:46ch;margin-bottom:32px}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap}
+.hero-meta{margin-top:28px;font-family:var(--mono);font-size:.75rem;color:var(--dim);letter-spacing:.04em}
+.hero-meta b{color:var(--cyan);font-weight:500}
+
+/* ── Terminal (signature) ────────────────────── */
+.terminal{padding:0;overflow:hidden}
+.term-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.term-bar span{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:var(--dim)}
+.term-bar .live{color:var(--green);display:flex;align-items:center;gap:6px}
+.term-bar .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.term-body{position:relative;padding:20px 20px 24px;font-family:var(--mono);font-size:.8rem;line-height:1.75;min-height:380px;white-space:pre-wrap;word-break:break-word}
+.term-body .a{color:var(--amber)}
+.term-body .cy{color:var(--cyan)}
+.term-body .g{color:var(--green)}
+.term-body .d{color:var(--dim)}
+.cursor{display:inline-block;width:8px;height:15px;background:var(--amber);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.scanline{position:absolute;left:0;right:0;height:64px;top:-64px;pointer-events:none;background:linear-gradient(to bottom,transparent,rgba(51,198,255,.07) 70%,rgba(51,198,255,.16));animation:sweep 5.5s linear infinite}
+@keyframes sweep{from{top:-64px}to{top:110%}}
+@media(prefers-reduced-motion:reduce){
+  .scanline,.term-bar .live::before,.cursor{animation:none}
+  html{scroll-behavior:auto}
+}
+
+/* ── Sections ────────────────────────────────── */
+section{padding:88px 0}
+.sec-head{max-width:640px;margin-bottom:52px}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(1.5rem,3vw,2.1rem);color:#fff;margin:16px 0 12px;line-height:1.2}
+.sec-head p{color:var(--dim)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:860px){.steps{grid-template-columns:1fr}}
+.step{padding:28px 24px}
+.step-tag{font-family:var(--mono);font-size:.7rem;letter-spacing:.18em;color:var(--cyan);margin-bottom:14px}
+.step h3{font-family:var(--display);font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px}
+.step p{font-size:.92rem;color:var(--dim)}
+.step code{font-family:var(--mono);font-size:.85em;color:var(--amber);background:var(--panel-2);padding:1px 6px;border:1px solid var(--line)}
+
+/* unlock ladder */
+.unlock{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+@media(max-width:920px){.unlock{grid-template-columns:1fr}}
+.ladder{padding:28px;font-family:var(--mono);font-size:.85rem}
+.rung{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px dashed var(--line)}
+.rung:last-child{border-bottom:none}
+.rung .lock{width:34px;text-align:center;flex-shrink:0}
+.rung.open .lock{color:var(--green)}
+.rung.shut .lock{color:var(--dim)}
+.rung .what{flex:1}
+.rung.open .what{color:var(--ink)}
+.rung.shut .what{color:var(--dim)}
+.rung .req{color:var(--amber);font-size:.78rem;white-space:nowrap}
+.unlock-copy h2{margin-top:16px}
+.unlock-copy p{color:var(--dim);margin-bottom:18px}
+.unlock-copy ul{list-style:none;margin-top:8px}
+.unlock-copy li{padding-left:22px;position:relative;color:var(--dim);font-size:.95rem;margin-bottom:10px}
+.unlock-copy li::before{content:"▸";position:absolute;left:0;color:var(--amber)}
+.unlock-copy li b{color:var(--ink);font-weight:600}
+
+/* sources strip */
+.sources{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:860px){.sources{grid-template-columns:1fr}}
+.source{padding:26px 24px}
+.source h3{font-family:var(--mono);font-size:.8rem;letter-spacing:.14em;color:var(--cyan);margin-bottom:10px;font-weight:600}
+.source p{font-size:.92rem;color:var(--dim)}
+.conf{margin-top:36px;padding:18px 24px;font-family:var(--mono);font-size:.8rem;display:flex;gap:32px;flex-wrap:wrap;color:var(--dim)}
+.conf b{color:var(--ink);font-weight:500}
+
+/* faq */
+.faq{max-width:760px}
+details{border:1px solid var(--line);background:var(--panel);margin-bottom:12px}
+summary{cursor:pointer;padding:18px 22px;font-family:var(--display);font-weight:600;font-size:.95rem;color:#fff;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:var(--mono);color:var(--amber);font-size:1.1rem;flex-shrink:0}
+details[open] summary::after{content:"–"}
+details p{padding:0 22px 20px;color:var(--dim);font-size:.93rem}
+details code{font-family:var(--mono);color:var(--amber);font-size:.86em}
+
+/* final cta */
+.cta-final{text-align:center;padding:96px 24px;border-top:1px solid var(--line)}
+.cta-final h2{margin-bottom:14px}
+.cta-final p{color:var(--dim);max-width:48ch;margin:0 auto 32px}
+
+footer{border-top:1px solid var(--line);padding:36px 0;font-size:.8rem;color:var(--dim)}
+.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+.foot a{color:var(--dim);text-decoration:none}
+.foot a:hover{color:var(--ink)}
+.foot .fine{font-family:var(--mono);font-size:.7rem;letter-spacing:.04em}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a class="logo" href="#"><span class="logo-mark" aria-hidden="true"></span>SC&nbsp;<span>INTEL</span>&nbsp;BOT</a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#unlock">Route unlocks</a>
+      <a href="#sources">Data sources</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-solid" href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=379968&scope=bot%20applications.commands">Add to Discord</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header class="hero wrap">
+  <div>
+    <div class="eyebrow">Trade intelligence network · Stanton / Pyro / Nyx</div>
+    <h1>Your org's eyes on every <em>trade terminal</em> in the verse.</h1>
+    <p>SC Intel Bot turns screenshots into live market data. Your members scan terminals in-game; the network merges their scans with UEX and SC Trade Tools, then posts ranked, confidence-scored routes straight into your Discord.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-solid" href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=379968&scope=bot%20applications.commands">Add to Discord — free</a>
+      <a class="btn btn-cyan" href="#how">See how it works</a>
+    </div>
+    <div class="hero-meta">SOURCES: <b>UEX</b> · <b>SC TRADE TOOLS</b> · <b>COMMUNITY SCANS</b> — refreshed hourly</div>
+  </div>
+
+  <!-- Signature: live route-intel terminal -->
+  <div class="mfd mfd-cyan terminal" aria-label="Example of the route intel the bot posts in Discord">
+    <span class="c" aria-hidden="true"></span>
+    <div class="term-bar">
+      <span>#SC-INTEL · ROUTE FEED</span>
+      <span class="live">LIVE</span>
+    </div>
+    <div class="term-body" id="term"><span class="scanline" aria-hidden="true"></span><span id="termText"></span><span class="cursor" id="termCursor" aria-hidden="true"></span></div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Operations</div>
+      <h2>Screenshot in. Route intel out.</h2>
+      <p>No spreadsheets, no manual entry, no dropdowns. The bot reads the terminal screen for you — station, prices, stock, all of it.</p>
+    </div>
+    <div class="steps">
+      <div class="mfd step"><span class="c" aria-hidden="true"></span>
+        <div class="step-tag">STEP 01 · IN-GAME</div>
+        <h3>Screenshot the terminal</h3>
+        <p>At any trade terminal, capture the <b>BUY</b> tab and the <b>LOCAL MARKET VALUE</b> tab. Order doesn't matter — the bot auto-detects which is which.</p>
+      </div>
+      <div class="mfd step"><span class="c" aria-hidden="true"></span>
+        <div class="step-tag">STEP 02 · DISCORD</div>
+        <h3>Run <code>/scan</code></h3>
+        <p>Attach both screenshots. OCR pulls the station name, every commodity, every price, and every stock level — then merges it into the network in seconds.</p>
+      </div>
+      <div class="mfd step"><span class="c" aria-hidden="true"></span>
+        <div class="step-tag">STEP 03 · PAYOUT</div>
+        <h3>Get personalized routes</h3>
+        <p>You're DM'd fresh routes sized to your registered ship, and your server's pinned route board updates for everyone. Use <code>/haul</code> and <code>/sell</code> any time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="unlock" style="background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap unlock">
+    <div class="mfd ladder" style="background:var(--void)"><span class="c" aria-hidden="true"></span>
+      <div class="rung open"><span class="lock">[✓]</span><span class="what">ROUTE 1 — TOP CONFIDENCE PICK</span><span class="req">1 STATION</span></div>
+      <div class="rung open"><span class="lock">[✓]</span><span class="what">ROUTE 2 — RUNNER-UP</span><span class="req">2 STATIONS</span></div>
+      <div class="rung shut"><span class="lock">[··]</span><span class="what">ROUTE 3 — FULL BOARD</span><span class="req">3 STATIONS</span></div>
+      <div class="rung shut"><span class="lock">[··]</span><span class="what">ACCESS WINDOW</span><span class="req">48H / RENEWS ON SCAN</span></div>
+    </div>
+    <div class="unlock-copy">
+      <div class="eyebrow">The unlock economy</div>
+      <h2>Intel is earned, not given.</h2>
+      <p>Every server unlocks its route board by contributing scans. That's not a paywall — it's what keeps the data fresh for everyone on the network.</p>
+      <ul>
+        <li><b>1 unique station scanned</b> unlocks your first live route. Three stations unlocks the full board.</li>
+        <li><b>Daily quests</b> assign each scanner the stalest terminal on the network — coverage goes where it's needed.</li>
+        <li><b>Banked days</b> reward overachievers: extra scans bank up to 3 days of access for your slow weeks.</li>
+        <li><b>48-hour expiry</b> means a dead server gets stale routes, and an active one never does.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="sources">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Signal quality</div>
+      <h2>Three sources. One confidence score.</h2>
+      <p>Any single data source lies to you eventually — patch days, stale entries, troll submissions. SC Intel Bot cross-references all three and tells you exactly how much to trust each route.</p>
+    </div>
+    <div class="sources">
+      <div class="mfd source"><span class="c" aria-hidden="true"></span>
+        <h3>UEX CORP</h3>
+        <p>The backbone. Full terminal price coverage across Stanton, Pyro, and Nyx, weighted by data age — anything older than 48 hours is hidden, not just flagged.</p>
+      </div>
+      <div class="mfd source"><span class="c" aria-hidden="true"></span>
+        <h3>SC TRADE TOOLS</h3>
+        <p>Independent confirmation. When SCTT's route engine agrees with the merged data, the route gets a confidence boost — two sources beat one.</p>
+      </div>
+      <div class="mfd source"><span class="c" aria-hidden="true"></span>
+        <h3>COMMUNITY SCANS</h3>
+        <p>The freshest signal in the verse: terminal screenshots from players standing there <i>right now</i>. Sanity-checked against UEX, duplicate-protected, cooldown-limited.</p>
+      </div>
+    </div>
+    <div class="mfd conf"><span class="c" aria-hidden="true"></span>
+      <span><b style="color:var(--amber)">⭐⭐⭐</b> ALL 3 SOURCES FRESH</span>
+      <span><b style="color:var(--amber)">⭐⭐</b> 2 SOURCES AGREE</span>
+      <span><b style="color:var(--amber)">⭐</b> SINGLE SOURCE</span>
+      <span><b>🔒</b> STALE — HIDDEN</span>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Comms check</div>
+      <h2>Questions from the hangar</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>Is it free?</summary>
+        <p>Yes. Add it to your server, scan a terminal, get routes. The network runs on contributed scans, not subscriptions.</p>
+      </details>
+      <details>
+        <summary>What stops people from submitting fake prices?</summary>
+        <p>Several layers: duplicate and near-duplicate screenshot detection, per-terminal cooldowns, rate limiting, and price sanity checks against UEX — a scan claiming a price wildly out of line with known data is rejected and flagged. Bad actors get noticed fast.</p>
+      </details>
+      <details>
+        <summary>Does it work in Pyro and Nyx?</summary>
+        <p>Yes — all three systems. Gateway stations even get a quick "which side are you on?" prompt so jump-point scans land in the right system.</p>
+      </details>
+      <details>
+        <summary>What permissions does the bot need?</summary>
+        <p>Just enough to create one <code>#sc-intel</code> channel, post and pin its route board, and read slash commands. It never reads your server's messages — it doesn't even request that permission.</p>
+      </details>
+      <details>
+        <summary>What does my org actually see?</summary>
+        <p>A pinned, auto-updating route board, a contributor leaderboard, and a scan feed. Each scanner also gets private DM results with routes sized to their registered ship via <code>/setship</code>.</p>
+      </details>
+      <details>
+        <summary>Who builds this?</summary>
+        <p>Immoral Acquisitions LLC — built by traders, for the org that got tired of alt-tabbing to three different price sites mid-haul.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<div class="cta-final">
+  <div class="eyebrow" style="justify-content:center">Clearance granted</div>
+  <h2>Put your org on the network.</h2>
+  <p>One click to add. One scan to unlock. Every member gets sharper routes than any single price site can give them.</p>
+  <a class="btn btn-solid" href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=379968&scope=bot%20applications.commands">Add SC Intel Bot to Discord</a>
+</div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span class="fine">SC INTEL BOT · IMMORAL ACQUISITIONS LLC</span>
+    <span class="fine">Unofficial fan project. Star Citizen® is a trademark of Cloud Imperium Rights LLC. Data: UEX Corp · SC Trade Tools · community contributions.</span>
+    <a href="https://discord.gg/YOUR_SUPPORT_INVITE">Support server</a>
+  </div>
+</footer>
+
+<script>
+// Signature element: the hero terminal types out a real route readout.
+(function(){
+  const el = document.getElementById('termText');
+  const cursor = document.getElementById('termCursor');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // [text, cssClass] pairs; '\n' line breaks
+  const script = [
+    ["> /scan  ", "d"], ["[2 attachments]", "cy"], ["\n"],
+    ["⏳ Running OCR on your screenshots...", "d"], ["\n"],
+    ["✓ Station detected: ", "g"], ["BAIJINI POINT — STANTON", null], ["\n"],
+    ["✓ 14 buy + 11 market commodities recorded", "g"], ["\n\n"],
+    ["━━ ROUTE 1 — ", "d"], ["LARANITE", "a"], [" ━━━━━━━━━━━━", "d"], ["\n"],
+    ["  BUY  ", "cy"], ["2,538/SCU @ ARC-L1 ", null], ["· supply 412 SCU", "d"], ["\n"],
+    ["  SELL ", "a"], ["3,104/SCU @ TDD ORISON ", null], ["· demand 380 SCU", "d"], ["\n"],
+    ["  PROFIT ", "d"], ["+566/SCU", "g"], ["   EST TOTAL ", "d"], ["+215,080 aUEC", "g"], ["\n"],
+    ["  CONFIDENCE ⭐⭐⭐ ", "a"], ["all 3 sources fresh", "d"], ["\n\n"],
+    ["━━ ROUTE 2 — ", "d"], ["TITANIUM", "a"], [" ━━━━━━━━━━━━", "d"], ["\n"],
+    ["  BUY  ", "cy"], ["7,809/SCU @ CHECKMATE — PYRO", null], ["\n"],
+    ["  SELL ", "a"], ["8,755/SCU @ EVERUS HARBOR", null], ["\n"],
+    ["  PROFIT ", "d"], ["+946/SCU", "g"], ["   CONFIDENCE ⭐⭐", "a"], ["\n\n"],
+    ["🎯 Daily quest complete — ", "g"], ["1 day banked", null], ["\n"],
+    ["📡 Route board updated for your whole server.", "cy"]
+  ];
+
+  function render(upTo, partial){
+    let html = "";
+    for (let i = 0; i < upTo; i++){
+      const [t, c] = script[i];
+      html += c ? `<span class="${c}">${t}</span>` : t;
+    }
+    if (partial){
+      const [t, c] = script[upTo];
+      const frag = t.slice(0, partial);
+      html += c ? `<span class="${c}">${frag}</span>` : frag;
+    }
+    el.innerHTML = html;
+  }
+
+  if (reduced){ render(script.length, 0); cursor.style.display = 'none'; return; }
+
+  let seg = 0, ch = 0;
+  function tick(){
+    if (seg >= script.length){
+      setTimeout(() => { seg = 0; ch = 0; el.innerHTML = ""; setTimeout(tick, 600); }, 9000);
+      return;
+    }
+    const [t] = script[seg];
+    ch++;
+    if (ch >= t.length){ seg++; ch = 0; render(seg, 0); }
+    else render(seg, ch);
+    // pacing: pause on line breaks, fast on text
+    const delay = t === "\n" || t === "\n\n" ? 120 : (t.startsWith("⏳") ? 24 : 11);
+    setTimeout(tick, delay);
+  }
+  setTimeout(tick, 700);
+})();
+</script>
+</body>
+</html>
